@@ -32,12 +32,13 @@ def write_to_file(connect):
         f.write(json.dumps(connect,ensure_ascii=False)+'\n')###json.dumps把字典转换为字符串
         f.close()
 
-def main():
-    url='http://maoyan.com/board/4?'
+def main(offset):
+    url='http://maoyan.com/board/4?offset=' + str(offset)
     html=get_one_page(url)
     for item in parse_one_page(html):
         print(item)
         write_to_file(item)
 
 if __name__=='__main__':
-    main()
+    for i in range(10):
+        main(i*10)
