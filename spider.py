@@ -13,31 +13,31 @@ def get_one_page(url):
         return None
 
 def parse_one_page(html):
-    pattern= re.compile('<dd>.*?boadr-index.*?(\d+)</i>.*?data-src="(.*?)".*?name"><a'
+    pattern= re.compile('<dd>.*?board-index.*?>(\d+)</i>.*?data-src="(.*?)".*?name"><a'
                        +'.*?>(.*?)</a>.*?star">(.*?)</p>.*?releasetime">(.*?)</p>'
-                        +'.*?integer">(.*?)</i>.*?fraction">(.*?)</i>',re.S)
+                        +'.*?integer">(.*?)</i>.*?fraction">(.*?)</i>.*?</dd>',re.S)
     items= re.findall(pattern,html)
     for item in items:
         yield {
             'index':item[0],
-            'immage':item[1],
+            'image':item[1],
             'title':item[2],
-            'actor':item[3].string()[3:],
+            'actor':item[3].strip()[3:],
             'time':item[4].strip()[5:],
             'score':item[5]+item[6]
         }
 
 def write_to_file(connect):
     with open('result.txt','a',encoding='utf-8') as f:
-        f.write(json.dumps(connect,ensure_ascii=False)+'\n')
+        f.write(json.dumps(connect,ensure_ascii=False)+'\n')###json.dumps把字典转换为字符串
         f.close()
 
-def main(offset):
+def main():
     url='http://maoyan.com/board/4?'
     html=get_one_page(url)
     for item in parse_one_page(html):
         print(item)
-        write_to__file(item)
+        write_to_file(item)
 
 if __name__=='__main__':
     main()
