@@ -4,6 +4,10 @@ from requests.exceptions import RequestException
 import json
 from bs4 import BeautifulSoup
 import re
+import os
+from hashlib import md5
+from multiprocessing import Pool
+from json.decoder import JSONDecodeError
 
 def get_page_index(offset,keyword):
     data={
@@ -25,10 +29,13 @@ def get_page_index(offset,keyword):
         return None
 
 def parser_page_index(html):
-    data=json.loads(html)
-    if data and 'data' in data.keys():
-        for item in data.get('data'):
-            yield item.get('article_url')
+    try:
+        data=json.loads(html)
+        if data and 'data' in data.keys():
+            for item in data.get('data'):
+                yield item.get('article_url')
+    except JSONDecodeError:
+        pass
 
 def get_page_detail(url):
     try:
@@ -51,15 +58,34 @@ def parser_page_detail(html,url):
         if data and 'sub_images' in data.keys():
             sub_images=data.get('sub_images')
             images=[item.get('url') for item in sub_images]
+            for image in images:
+                download_image(image)
             return {
                 'title':title,
                 'images':images,
                 'url':url
             }
 
+def download_image(url):
+    print('正在下载',url)
+    try:
+        response = requests.get(url)
+        if response.status_code==200:
+            save_image(response.content)
+        return None
+    except RequestException:
+        print('请求图片出错',url)
+        return None
 
-def main():
-    html=get_page_index(0,'街拍')
+def save_image(content):
+    file_path = '{0}/{1}.{2}'.format(os.getcwd(),md5(content).hexdigest(),'jpg')
+    if not os.path.exists(file_path):
+        with open(file_path,'wb') as f:
+            f.write(content)
+            f.close()
+
+def main(offset):
+    html=get_page_index(offset,'街拍')
     for url in parser_page_index(html):
         html=get_page_detail(url)
         if html:
@@ -67,4 +93,6 @@ def main():
             print(result)
 
 if __name__=='__main__':
-    main()
+    groups=[x*20 for x in range(1,9)]
+    pool=Pool()
+    pool.map(main,groups)
